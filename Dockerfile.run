@@ -1,0 +1,5 @@
+FROM busybox:1.24
+WORKDIR /var/www
+COPY . .
+EXPOSE 80
+CMD busybox httpd -f -vv

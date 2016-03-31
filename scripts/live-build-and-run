@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+set -o errexit
+set -o pipefail
+set -o nounset
+trap 'echo "$0: line $LINENO: exit status of last command: $?" 1>&2' ERR
+
+slides_port=8080
+this_dir=$(cd -P "$(dirname "$0")" && pwd)
+
+cleanup() {
+  echo
+  echo "Cleaning up..."
+  docker rm --force slides-builder slides-runner
+}
+
+trap 'cleanup' EXIT
+
+cd "$this_dir/.."
+
+echo "Building slides-builder image..."
+docker build --tag=slides-builder --file=Dockerfile.build .
+echo
+echo "Running slides-builder container in watch mode..."
+docker run \
+  --name=slides-builder \
+  --rm \
+  --volume="$(pwd):/var/www" \
+  slides-builder --watch --output-file="index.html" \
+  &
+
+echo
+echo "Building slides-runner image..."
+docker build --tag=slides-runner --file=Dockerfile.run .
+echo
+echo "Running slides-runner container..."
+docker run \
+  --name=slides-runner \
+  --rm \
+  --publish="$slides_port":80 \
+  --volumes-from=slides-builder \
+  slides-runner \
+  &
+
+"$this_dir/open-in-browser"
+
+wait
