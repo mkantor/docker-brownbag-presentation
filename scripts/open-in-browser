@@ -10,24 +10,31 @@ command-exists() {
   command -v "$1" >/dev/null 2>&1
 }
 
-# Note that this assumes you're using the default machine name for
-# docker-machine.
-if command-exists docker-machine && [ $(docker-machine status) = "Running" ]
-then
-  docker_host=$(docker-machine ip)
-else
-  docker_host="localhost"
-fi
-slides_url="http://$docker_host:$slides_port"
+get-docker-host() {
+  # Note that this assumes you're using the default machine name for
+  # docker-machine.
+  if command-exists docker-machine && [ $(docker-machine status) = "Running" ]
+  then
+    docker-machine ip
+  else
+    echo "localhost"
+  fi
+}
+
+generic-open() {
+  if command-exists xdg-open
+  then
+    xdg-open "$1"
+  elif command-exists open
+  then
+    open "$1"
+  else
+    echo "Couldn't figure out how to open $1" 1>&2
+  fi
+}
+
+slides_url="http://$(get-docker-host):$slides_port"
 
 echo
 echo "Opening $slides_url..."
-if command-exists xdg-open
-then
-  xdg-open "$slides_url"
-elif command-exists open
-then
-  open "$slides_url"
-else
-  echo "Couldn't figure out how to open $slides_url" 1>&2
-fi
+generic-open $slides_url
