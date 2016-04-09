@@ -1,0 +1,20 @@
+version: '2'
+
+services:
+  slides-builder:
+    build:
+      context: .
+      dockerfile: Dockerfile.build
+    volumes:
+      - .:/var/www
+    command: --watch --output-file="index.html"
+  slides-runner:
+    depends_on:
+      - slides-builder
+    build:
+      context: .
+      dockerfile: Dockerfile.run
+    volumes_from:
+      - slides-builder:ro
+    ports:
+      - '80'

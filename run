@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+set -o errexit
+set -o pipefail
+set -o nounset
+trap 'echo "$0: line $LINENO: exit status of last command: $?" 1>&2' ERR
+trap 'cleanup' EXIT
+
+cleanup() {
+  echo
+  echo "Cleaning up..."
+  docker-compose down
+}
+
+wait-for() {
+  until "$@"
+  do
+    sleep 0.1
+  done
+}
+
+command-exists() {
+  command_to_check="$1"
+  command -v "$command_to_check" >/dev/null 2>&1
+}
+
+get-docker-host() {
+  # Note that this assumes you're using the default machine name for
+  # docker-machine.
+  if command-exists docker-machine && [ $(docker-machine status) = "Running" ]
+  then
+    docker-machine ip
+  else
+    echo "localhost"
+  fi
+}
+
+generic-open() {
+  resource="$1"
+  if command-exists xdg-open
+  then
+    xdg-open "$resource"
+  elif command-exists open
+  then
+    open "$resource"
+  else
+    echo "Couldn't figure out how to open $1" 1>&2
+  fi
+}
+
+http-success() {
+  url="$1"
+  if command-exists wget
+  then
+    wget --spider "$url"
+  elif command-exists curl
+  then
+    curl --head "$url"
+  else
+    echo "Couldn't make an HTTP request" 1>&2
+    exit 129
+  fi
+}
+
+this_dir=$(cd -P "$(dirname "$0")" && pwd)
+cd "$this_dir"
+docker-compose build && docker-compose up &
+
+port=$(wait-for docker-compose port slides-runner 80 2>/dev/null | cut -d":" -f2)
+slides_url="http://$(get-docker-host):$port"
+wait-for http-success "$slides_url"
+
+echo "Opening $slides_url..."
+generic-open "$slides_url"
+
+wait

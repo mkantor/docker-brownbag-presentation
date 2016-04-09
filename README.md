@@ -3,12 +3,8 @@
 Slides are presented using [remark](http://remarkjs.com/) via
 [markdown-to-slides](https://www.npmjs.com/package/markdown-to-slides).
 
-To build and run the slides, use one of the helper scripts:
-- `./scripts/build-and-run` will output a static HTML file, serve it with a
-  web server, and open it in a browser.
-- `./scripts/live-build-and-run` uses markdown-to-slides's `--watch` mode to
-  automatically rebuild the presentation when slide content changes. You just
-  need to refresh the browser page.
+`./run` is a handy helper script to build and launch the slideshow. It requires
+docker 1.10.x and docker-compose 1.6.x.
 
 ## To use presenter mode:
 
