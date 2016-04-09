@@ -4,7 +4,7 @@ Slides are presented using [remark](http://remarkjs.com/) via
 [markdown-to-slides](https://www.npmjs.com/package/markdown-to-slides).
 
 `./run` is a handy helper script to build and launch the slideshow. It requires
-the docker and docker-compose CLI tools.
+docker 1.10.x and docker-compose 1.6.x.
 
 ## To use presenter mode:
 
