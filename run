@@ -19,23 +19,31 @@ wait-for() {
 }
 
 command-exists() {
-  command_to_check="$1"
+  local command_to_check="$1"
   command -v "$command_to_check" >/dev/null 2>&1
 }
 
-get-docker-host() {
-  # Note that this assumes you're using the default machine name for
-  # docker-machine.
-  if command-exists docker-machine && [ $(docker-machine status) = "Running" ]
+use-docker-machine?() {
+  # This assumes you're using the default machine name.
+  command-exists docker-machine && [ "$(docker-machine status)" = "Running" ]
+}
+
+get-slides-url() {
+  local public_port
+  local ip
+  local port
+  public_port=$(wait-for docker-compose port slides-runner 80 2>/dev/null)
+  ip=$(cut -d":" -f1 <<< "$public_port")
+  port=$(cut -d":" -f2 <<< "$public_port")
+  if use-docker-machine?
   then
-    docker-machine ip
-  else
-    echo "localhost"
+    ip=$(docker-machine ip)
   fi
+  echo "http://$ip:$port"
 }
 
 generic-open() {
-  resource="$1"
+  local resource="$1"
   if command-exists xdg-open
   then
     xdg-open "$resource"
@@ -48,13 +56,13 @@ generic-open() {
 }
 
 http-success() {
-  url="$1"
+  local url="$1"
   if command-exists wget
   then
-    wget --spider "$url"
+    wget --spider --no-verbose "$url"
   elif command-exists curl
   then
-    curl --head "$url"
+    curl --head --silent "$url"
   else
     echo "Couldn't make an HTTP request" 1>&2
     exit 129
@@ -65,10 +73,8 @@ this_dir=$(cd -P "$(dirname "$0")" && pwd)
 cd "$this_dir"
 docker-compose build && docker-compose up &
 
-port=$(wait-for docker-compose port slides-runner 80 2>/dev/null | cut -d":" -f2)
-slides_url="http://$(get-docker-host):$port"
+slides_url=$(get-slides-url)
 wait-for http-success "$slides_url"
-
 echo "Opening $slides_url..."
 generic-open "$slides_url"
 
