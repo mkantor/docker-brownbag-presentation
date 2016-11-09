@@ -23,11 +23,6 @@ command-exists() {
   command -v "$command_to_check" >/dev/null 2>&1
 }
 
-use-docker-machine?() {
-  # This assumes you're using the default machine name.
-  command-exists docker-machine && [ "$(docker-machine status)" = "Running" ]
-}
-
 get-slides-url() {
   local public_port
   local ip
@@ -35,10 +30,6 @@ get-slides-url() {
   public_port=$(wait-for docker-compose port slides-runner 80 2>/dev/null)
   ip=$(cut -d":" -f1 <<< "$public_port")
   port=$(cut -d":" -f2 <<< "$public_port")
-  if use-docker-machine?
-  then
-    ip=$(docker-machine ip)
-  fi
   echo "http://$ip:$port"
 }
 
